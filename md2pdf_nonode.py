@@ -20,6 +20,11 @@ MathJax = {
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>"""
 
 CHROME_CANDS = [
+    os.environ.get("CHROME_BIN", ""),          # Docker/리눅스: 환경변수 우선
+    "/usr/bin/chromium",                        # 리눅스 (Docker)
+    "/usr/bin/chromium-browser",
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
     r"C:/Program Files/Google/Chrome/Application/chrome.exe",
     r"C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
     r"C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
@@ -28,7 +33,7 @@ CHROME_CANDS = [
 
 def find_chrome():
     for c in CHROME_CANDS:
-        if os.path.exists(c):
+        if c and os.path.exists(c):
             return c
     raise SystemExit("Chrome/Edge를 찾을 수 없습니다.")
 
@@ -69,6 +74,7 @@ def convert(md_path, pdf_path):
     url = "file:///" + tmp_html.replace("\\", "/")
     out = str(pathlib.Path(pdf_path))
     cmd = [chrome, "--headless=new", "--disable-gpu", "--no-sandbox",
+           "--disable-dev-shm-usage",                 # Docker에서 Chrome 안정화
            "--no-pdf-header-footer", "--virtual-time-budget=30000",
            "--run-all-compositor-stages-before-draw",
            f"--print-to-pdf={out}", url]
