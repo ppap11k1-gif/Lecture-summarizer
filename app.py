@@ -8,6 +8,8 @@ from google.genai import types
 from notion_client import Client
 import tempfile
 import md2pdf_nonode
+import markdown as mdlib
+import streamlit.components.v1 as components
 
 load_dotenv()
 
@@ -606,7 +608,25 @@ if st.button("정리하기", type="primary"):
                     )
                     summary = resp.text
             st.success("완료!")
-            st.markdown(summary, unsafe_allow_html=True)      # 화면에 렌더 (HTML 박스도 표시)
+            # AI 결과를 격리된 iframe에 렌더 → AI가 뱉은 HTML/CSS가 페이지 스크롤을 못 건드림
+            _body = mdlib.markdown(summary, extensions=["tables", "fenced_code", "sane_lists"])
+            components.html(
+                """<style>
+                  .doc{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.7;color:#1a1a1a;font-size:15px;padding:6px 12px}
+                  .doc h1{font-size:1.7em;border-bottom:2px solid #eee;padding-bottom:.2em}
+                  .doc h2{font-size:1.35em;margin-top:1.4em;border-bottom:1px solid #eee;padding-bottom:.15em}
+                  .doc h3{font-size:1.12em;margin-top:1.1em}
+                  .doc table{border-collapse:collapse;margin:1em 0}
+                  .doc th,.doc td{border:1px solid #ddd;padding:6px 10px;text-align:left}
+                  .doc th{background:#f5f7fa}
+                  .doc blockquote{border-left:3px solid #c7d2fe;margin:1em 0;padding:.3em 1em;color:#444;background:#f8faff}
+                  .doc code{background:#f2f2f2;padding:.1em .3em;border-radius:4px}
+                  .doc pre{background:#f7f7f7;padding:10px;border-radius:6px;overflow:auto}
+                  .doc hr{border:none;border-top:1px solid #eee;margin:1.4em 0}
+                </style>
+                <div class="doc">""" + _body + "</div>",
+                height=680, scrolling=True,
+            )
             st.download_button("📥 .md 다운로드", summary, file_name="강의정리.md")
 
             with st.spinner("PDF 만드는 중... (수식 렌더링, 길면 30초)"):
